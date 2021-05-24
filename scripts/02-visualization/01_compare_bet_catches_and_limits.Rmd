@@ -1,5 +1,5 @@
 ---
-title: "WCPFC Data Plots: LL Catch Quota VDS Plots"
+title: "Compare BET catches in the WCPFC convention area to catch limits"
 output: html_document
 ---
 
@@ -12,19 +12,15 @@ library(readxl)
 library(tidyverse)
 library(countrycode)
 
-# Directory to save the plots generated in this script
-results_dir <- here::here("results", "01-wcpfc-data-plots/")
-if (dir.exists(results_dir) == F) {
-  dir.create(results_dir, recursive = T)
-} 
+source(here::here("scripts", "00_setup.R"))
 ```
 
 ## Catches and Catch Quotas
 
 ```{r cars}
-catch_dat <- read_csv(here::here("data", "edited", "wcpfc_yearbook_dat_tidy_1950_2018_LL_ONLY.csv"))
+catch_dat <- read_csv(file.path(clean_dir, "wcpfc_yearbook_dat_tidy_1950_2018_LL_ONLY.csv"))
 
-quota_dat <- read_csv(here::here("data", "edited", "wcpfc_bet_quota_dat_tidy_2014_2020.csv"))
+quota_dat <- read_csv(file.path(clean_dir, "wcpfc_bet_quota_dat_tidy_2014_2020.csv"))
 ```
 
 Combine LL catches with quotas by flag state
@@ -34,6 +30,7 @@ catch_quota_dat <- catch_dat %>%
   dplyr::filter(year >= 2014 & species == "bet") %>%
   group_by(year, gear, flag_iso3, flag_name, species, is_SID) %>%
   summarize(catch = sum(catch, na.rm = T)) %>%
+  ungroup() %>%
   left_join(quota_dat %>% dplyr::select(-flag_name, -flag_iso2), by = c("year", "flag_iso3")) %>%
   mutate(quota = case_when(!is.na(quota) ~ quota,
                            !is_SID ~ 2000))
@@ -69,7 +66,7 @@ catch_quota_facet_plot_by_flag_ALL <- ggplot()+
   scale_fill_manual(values = c("darkslategrey", "grey"))+
   guides(fill = F)
 
-ggsave(paste0(results_dir, "catch_quota_facet_plot_by_flag_ALL.png"), 
+ggsave(file.path(vis_plot_dir, "catch_quota_facet_plot_by_flag_ALL.png"), 
        catch_quota_facet_plot_by_flag_ALL, width = 16, height = 8.5, units = "in")
 ```
 
@@ -92,7 +89,7 @@ catch_quota_facet_plot_by_flag_non_SIDS <- ggplot()+
   labs(x = "Year", y = "Longline BET catch (mt)")+
   guides(fill = F)
 
-ggsave(paste0(results_dir, "catch_quota_facet_plot_by_flag_non_SIDs.png"), 
+ggsave(file.path(vis_plot_dir, "catch_quota_facet_plot_by_flag_non_SIDs.png"), 
        catch_quota_facet_plot_by_flag_non_SIDS, width = 16, height = 8.5, units = "in")
 ```
 
@@ -108,7 +105,7 @@ catch_quota_facet_plot_by_flag_SIDS <- catch_quota_facet_plot_dat %>%
   theme_classic()+
   labs(x = "Year", y = "Longline BET catch (mt)")
 
-ggsave(paste0(results_dir, "catch_quota_facet_plot_by_flag_SIDs.png"), 
+ggsave(file.path(vis_plot_dir, "catch_quota_facet_plot_by_flag_SIDs.png"), 
        catch_quota_facet_plot_by_flag_SIDS, width = 16, height = 8.5, units = "in")
 ```
 
@@ -142,6 +139,6 @@ catch_quota_facet_plot_by_flag_top12 <- ggplot()+
   scale_fill_manual(values = c("darkslategrey", "grey"))+
   guides(fill = F)
 
-ggsave(paste0(results_dir, "catch_quota_facet_plot_by_flag_top12.png"), 
+ggsave(file.path(vis_plot_dir, "catch_quota_facet_plot_by_flag_top12.png"), 
        catch_quota_facet_plot_by_flag_top12, width = 16, height = 8.5, units = "in")
 ```
